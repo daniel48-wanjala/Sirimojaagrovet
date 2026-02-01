@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Our Goods - [Your Business Name] Nairobi</title>
+  
+  <!-- Same Tailwind Play CDN + custom config as your landing page -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#10b981',     // Emerald green
+            secondary: '#1e40af',
+            accent: '#f59e0b',
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+        }
+      }
+    }
+  </script>
+  
+  <!-- Google Fonts (match your landing page) -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-gray-50 font-sans antialiased">
+
+  <!-- Navigation (simple top bar to link back to home + to this page) -->
+  <nav class="bg-white shadow-md sticky top-0 z-10">
+    <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+      <a href="index.html" class="text-2xl font-bold text-primary">[Your Business Name]</a>
+      <div class="space-x-6">
+        <a href="index.html" class="text-gray-700 hover:text-primary">Home</a>
+        <a href="products.html" class="text-primary font-semibold">Goods</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Products Section -->
+  <section class="py-16 md:py-24">
+    <div class="container mx-auto px-6">
+      <h1 class="text-4xl md:text-5xl font-bold text-center mb-12 text-gray-800">Our Goods & Prices</h1>
+      
+      <!-- Responsive Grid: 1 col mobile, 2 md, 3 lg -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+
+        <!-- Product Card Example 1 -->
+        <div class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition duration-300">
+          <img src="https://images.unsplash.com/photo-1523275335684-04c8cfac3e5d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
+               alt="Product 1" class="w-full h-48 object-cover">
+          <div class="p-6">
+            <h3 class="text-xl font-semibold mb-2 text-gray-800">Wireless Headphones</h3>
+            <p class="text-lg font-bold text-primary mb-4">KSh 4,500</p>
+            <p class="text-gray-600 mb-4">High-quality sound, long battery life. Perfect for daily use.</p>
+            <button onclick="payWithMpesa(4500, 'Wireless Headphones')" 
+                    class="w-full bg-primary text-white font-bold py-3 rounded-lg hover:bg-emerald-700 transition">
+              Buy Now via M-Pesa
+            </button>
+          </div>
+        </div>
+
+        <!-- Product Card Example 2 - Duplicate & customize as needed -->
+        <div class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition duration-300">
+          <img src="https://images.unsplash.com/photo-1572635196237-14b3f281503f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
+               alt="Product 2" class="w-full h-48 object-cover">
+          <div class="p-6">
+            <h3 class="text-xl font-semibold mb-2 text-gray-800">Sunglasses</h3>
+            <p class="text-lg font-bold text-primary mb-4">KSh 2,200</p>
+            <p class="text-gray-600 mb-4">UV protection, stylish design for everyday wear.</p>
+            <button onclick="payWithMpesa(2200, 'Sunglasses')" 
+                    class="w-full bg-primary text-white font-bold py-3 rounded-lg hover:bg-emerald-700 transition">
+              Buy Now via M-Pesa
+            </button>
+          </div>
+        </div>
+
+        <!-- Add more cards here... copy-paste the div above and change image/src/price/name -->
+
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer (match your landing page) -->
+  <footer class="bg-gray-900 text-white py-10 text-center">
+    <p>&copy; 2026 [Your Business Name]. All rights reserved. Nairobi, Kenya.</p>
+  </footer>
+
+  <!-- Tinypesa STK Push Script (paste your API key!) -->
+  <script>
+    async function payWithMpesa(amount, productName) {
+      const phone = prompt("Enter your M-Pesa phone number (e.g., 254712345678):");
+      if (!phone || !phone.startsWith('254') || phone.length !== 12) {
+        alert("Please enter a valid Kenyan number starting with 254");
+        return;
+      }
+
+      const status = confirm(`Confirm payment of KSh ${amount} for ${productName}?`);
+
+      if (!status) return;
+
+      try {
+        const response = await fetch('https://tinypesa.com/api/v1/express/initialize', {
+          method: 'POST',
+          headers: {
+            'Apikey': 'YOUR_TINYPESA_API_KEY_HERE',  // ← Replace with your real Tinypesa API key!
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            msisdn: phone,
+            amount: amount,
+            account_no: productName.replace(/\s+/g, '_')  // Simple reference
+          })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          alert('STK Push sent! Check your phone and enter PIN to complete payment.');
+        } else {
+          alert('Error: ' + (data.message || 'Something went wrong. Try again.'));
+        }
+      } catch (err) {
+        alert('Network error. Please check your connection.');
+        console.error(err);
+      }
+    }
+  </script>
+
+</body>
+</html>
