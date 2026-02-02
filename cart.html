@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Your Cart - sirimoja agrovet Nalondo</title>
+  
+  <!-- Tailwind CDN + same custom config -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#10b981',
+            secondary: '#1e40af',
+            accent: '#f59e0b',
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+        }
+      }
+    }
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-gray-50 font-sans antialiased">
+
+  <!-- Navigation (consistent across pages) -->
+  <nav class="bg-white shadow-md sticky top-0 z-10">
+    <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+      <a href="index.html" class="text-2xl font-bold text-primary">sirimoja agrovet</a>
+      <div class="flex items-center space-x-6">
+        <a href="index.html" class="text-gray-700 hover:text-primary">Home</a>
+        <a href="products.html" class="text-gray-700 hover:text-primary">Goods</a>
+        <a href="cart.html" class="text-primary font-semibold relative">
+          Cart 
+          <span id="cart-count" class="absolute -top-2 -right-3 bg-red-500 text-white text-xs rounded-full px-2 py-1">0</span>
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Cart Content -->
+  <section class="py-16 md:py-24 min-h-screen">
+    <div class="container mx-auto px-6">
+      <h1 class="text-4xl md:text-5xl font-bold text-center mb-12 text-gray-800">Your Shopping Cart</h1>
+
+      <div id="cartItems" class="space-y-6 mb-12"></div>
+
+      <!-- Empty cart message -->
+      <div id="emptyCart" class="text-center text-gray-600 text-xl hidden">
+        Your cart is empty. <a href="products.html" class="text-primary hover:underline">Browse our goods →</a>
+      </div>
+
+      <!-- Summary & Actions -->
+      <div id="cartSummary" class="bg-white p-8 rounded-xl shadow-md max-w-2xl mx-auto hidden">
+        <div class="flex justify-between text-2xl font-bold mb-6">
+          <span>Total:</span>
+          <span id="cartTotal">KSh 0</span>
+        </div>
+        <div class="flex flex-col sm:flex-row gap-4">
+          <button onclick="clearCart()" class="flex-1 bg-red-600 text-white font-bold py-4 rounded-lg hover:bg-red-700 transition">
+            Clear Cart
+          </button>
+          <button onclick="checkoutWithMpesa()" class="flex-1 bg-primary text-white font-bold py-4 rounded-lg hover:bg-emerald-700 transition">
+            Pay Total via M-Pesa
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bg-gray-900 text-white py-10 text-center">
+    <p>&copy; 2026 [Your Business Name]. All rights reserved. Nairobi, Kenya.</p>
+  </footer>
+
+  <!-- Shared Cart Logic (load from localStorage) -->
+  <script>
+    let cart = JSON.parse(localStorage.getItem('cart')) || [];
+
+    function saveCart() {
+      localStorage.setItem('cart', JSON.stringify(cart));
+      updateCartDisplay();
+    }
+
+    function updateCartDisplay() {
+      const itemsEl = document.getElementById('cartItems');
+      const emptyEl = document.getElementById('emptyCart');
+      const summaryEl = document.getElementById('cartSummary');
+      const countEl = document.getElementById('cart-count');
+      const totalEl = document.getElementById('cartTotal');
+
+      // Update badge count (works on all pages if nav is copied)
+      const count = cart.reduce((sum, item) => sum + item.quantity, 0);
+      countEl.textContent = count;
+
+      itemsEl.innerHTML = '';
+      let total = 0;
+
+      if (cart.length === 0) {
+        emptyEl.classList.remove('hidden');
+        summaryEl.classList.add('hidden');
+        return;
+      }
+
+      emptyEl.classList.add('hidden');
+      summaryEl.classList.remove('hidden');
+
+      cart.forEach(item => {
+        total += item.price * item.quantity;
+        const div = document.createElement('div');
+        div.className = 'flex flex-col sm:flex-row justify-between items-start sm:items-center border-b py-6 gap-4';
+        div.innerHTML = `
+          <div class="flex items-center gap-4 flex-1">
+            <img src="\( {item.image}" alt=" \){item.name}" class="w-20 h-20 object-cover rounded">
+            <div>
+              <h4 class="font-semibold text-lg">${item.name}</h4>
+              <p class="text-gray-600">KSh ${item.price.toLocaleString()} × ${item.quantity}</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-6">
+            <p class="text-xl font-bold text-primary">KSh ${(item.price * item.quantity).toLocaleString()}</p>
+            <button onclick="removeFromCart(${item.id})" class="text-red-600 hover:text-red-800 font-bold text-lg">Remove</button>
+          </div>
+        `;
+        itemsEl.appendChild(div);
+      });
+
+      totalEl.textContent = `KSh ${total.toLocaleString()}`;
+    }
+
+    function removeFromCart(id) {
+      if (confirm('Remove this item?')) {
+        cart = cart.filter(item => item.id !== id);
+        saveCart();
+      }
+    }
+
+    function clearCart() {
+      if (confirm('Clear entire cart?')) {
+        cart = [];
+        saveCart();
+      }
+    }
+
+    function checkoutWithMpesa() {
+      const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+      if (total === 0) {
+        alert('Cart is empty!');
+        return;
+      }
+      const phone = prompt("Enter your M-Pesa phone number (e.g., 254712345678):");
+      if (!phone || !phone.startsWith('254') || phone.length !== 12) {
+        alert("Please enter a valid Kenyan number starting with 254");
+        return;
+      }
+      if (!confirm(`Confirm payment of KSh ${total.toLocaleString()} for your cart?`)) return;
+
+      // Tinypesa call (paste your full payWithMpesa logic here, adapted for total)
+      fetch('https://tinypesa.com/api/v1/express/initialize', {
+        method: 'POST',
+        headers: {
+          'Apikey': 'YOUR_TINYPESA_API_KEY_HERE',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          msisdn: phone,
+          amount: total,
+          account_no: 'Cart_Checkout_' + Date.now()  // Unique ref
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          alert('STK Push sent! Check your phone to complete payment.');
+          // Optional: clearCart() after success if you want (but confirm payment first via callback if possible)
+        } else {
+          alert('Error: ' + (data.message || 'Try again'));
+        }
+      })
+      .catch(err => {
+        alert('Network error.');
+        console.error(err);
+      });
+    }
+
+    // Initial load
+    updateCartDisplay();
+
+    // Your Tinypesa payWithMpesa function (if you want to keep single-item buy on products page)
+    // async function payWithMpesa(amount, productName) { ... }  ← paste here if needed
+  </script>
+
+</body>
+</html>
