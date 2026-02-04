@@ -71,7 +71,167 @@
       </div>
     </div>
   </section>
+<!-- ... your head, nav, and section opening tags stay the same ... -->
 
+<div id="cartItems" class="space-y-6 mb-12"></div>
+
+<!-- ... emptyCart and cartSummary divs stay the same ... -->
+
+<script>
+  let cart = JSON.parse(localStorage.getItem('cart')) || [];
+
+  function saveCart() {
+    localStorage.setItem('cart', JSON.stringify(cart));
+    updateCartDisplay();
+  }
+
+  function updateCartDisplay() {
+    const itemsEl = document.getElementById('cartItems');
+    const emptyEl = document.getElementById('emptyCart');
+    const summaryEl = document.getElementById('cartSummary');
+    const countEl = document.getElementById('cart-count');
+    const totalEl = document.getElementById('cartTotal');
+
+    const count = cart.reduce((sum, item) => sum + item.quantity, 0);
+    countEl.textContent = count;
+
+    itemsEl.innerHTML = '';
+    let total = 0;
+
+    if (cart.length === 0) {
+      emptyEl.classList.remove('hidden');
+      summaryEl.classList.add('hidden');
+      return;
+    }
+
+    emptyEl.classList.add('hidden');
+    summaryEl.classList.remove('hidden');
+
+    cart.forEach(item => {
+      total += item.price * item.quantity;
+
+      const div = document.createElement('div');
+      div.className = 'flex flex-col sm:flex-row justify-between items-start sm:items-center border-b py-6 gap-4 bg-white p-4 rounded-lg shadow-sm';
+      div.innerHTML = `
+        <div class="flex items-center gap-4 flex-1">
+          <img src="\( {item.image}" alt=" \){item.name}" class="w-20 h-20 object-cover rounded">
+          <div>
+            <h4 class="font-semibold text-lg">${item.name}</h4>
+            <p class="text-gray-600">KSh ${item.price.toLocaleString()}</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-6">
+          <!-- Quantity Controls -->
+          <div class="flex items-center border border-gray-300 rounded">
+            <button 
+              onclick="decreaseQuantity(${item.id})" 
+              class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold">-</button>
+            <span class="px-6 py-2 font-medium">${item.quantity}</span>
+            <button 
+              onclick="increaseQuantity(${item.id})" 
+              class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold">+</button>
+          </div>
+
+          <p class="text-xl font-bold text-primary min-w-[100px] text-right">
+            KSh ${(item.price * item.quantity).toLocaleString()}
+          </p>
+
+          <button onclick="removeFromCart(${item.id})" 
+                  class="text-red-600 hover:text-red-800 font-bold text-lg">
+            Remove
+          </button>
+        </div>
+      `;
+      itemsEl.appendChild(div);
+    });
+
+    totalEl.textContent = `KSh ${total.toLocaleString()}`;
+  }
+
+  function increaseQuantity(id) {
+    const item = cart.find(i => i.id === id);
+    if (item) {
+      item.quantity += 1;
+      saveCart();
+    }
+  }
+
+  function decreaseQuantity(id) {
+    const item = cart.find(i => i.id === id);
+    if (item) {
+      if (item.quantity > 1) {
+        item.quantity -= 1;
+        saveCart();
+      } else {
+        // Optional: remove if quantity would be 0
+        if (confirm(`Remove ${item.name} from cart?`)) {
+          removeFromCart(id);
+        }
+      }
+    }
+  }
+
+  function removeFromCart(id) {
+    if (confirm('Remove this item?')) {
+      cart = cart.filter(item => item.id !== id);
+      saveCart();
+    }
+  }
+
+  function clearCart() {
+    if (confirm('Clear entire cart?')) {
+      cart = [];
+      saveCart();
+    }
+  }
+
+  function checkoutWithMpesa() {
+    const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    if (total === 0) {
+      alert('Cart is empty!');
+      return;
+    }
+    const phone = prompt("Enter your M-Pesa phone number (e.g., 254712345678):");
+    if (!phone || !phone.startsWith('254') || phone.length !== 12) {
+      alert("Please enter a valid Kenyan number starting with 254");
+      return;
+    }
+    if (!confirm(`Confirm payment of KSh ${total.toLocaleString()} for your cart?`)) return;
+
+    // Tinypesa call – replace with your actual API key
+    fetch('https://tinypesa.com/api/v1/express/initialize', {
+      method: 'POST',
+      headers: {
+        'Apikey': 'YOUR_TINYPESA_API_KEY_HERE',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        msisdn: phone,
+        amount: total,
+        account_no: 'Cart_Checkout_' + Date.now()
+      })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        alert('STK Push sent! Check your phone to complete payment.');
+        // You could clearCart() here after confirming payment (if you add webhook later)
+      } else {
+        alert('Error: ' + (data.message || 'Try again'));
+      }
+    })
+    .catch(err => {
+      alert('Network error.');
+      console.error(err);
+    });
+  }
+
+  // Initial load
+  updateCartDisplay();
+</script>
+
+<!-- ... close body and html ... -->
   <!-- Footer -->
   <footer class="bg-gray-900 text-white py-10 text-center">
     <p>&copy; 2026 sirimoja agrovet. All rights reserved. Nalondo, Kenya.</p>
